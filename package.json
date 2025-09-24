@@ -4,8 +4,8 @@
   "description": "API de productos con autenticación JWT para prácticas en clase",
   "main": "api_producto.js",
   "scripts": {
-    "start": "api_producto.js"
-  },
+  "start": "node api_producto.js"
+},
   "keywords": [
     "api",
     "express",
