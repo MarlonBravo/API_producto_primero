@@ -2,9 +2,9 @@
   "name": "api-productos",
   "version": "1.0.0",
   "description": "API de productos con autenticación JWT para prácticas en clase",
-  "main": "api_swagger.js",
+  "main": "api_producto.js",
   "scripts": {
-    "start": "api_swagger.js"
+    "start": "api_producto.js"
   },
   "keywords": [
     "api",
@@ -12,7 +12,7 @@
     "jwt",
     "productos"
   ],
-  "author": "Marlon Bravo",
+  "author": "Marlon",
   "license": "MIT",
   "dependencies": {
     "body-parser": "^1.20.2",
