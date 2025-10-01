@@ -45,7 +45,7 @@ let productos = [
  */
 app.post("/auth", (req, res) => {
   const { username, password } = req.body;
-  if (username === "emilys" && password === "emilyspass") {
+  if (username === "emilys" && password === "contrasena123") {
     const token = jwt.sign({ username }, SECRET_KEY, { expiresIn: "10m" });
     return res.json({ token });
   }
