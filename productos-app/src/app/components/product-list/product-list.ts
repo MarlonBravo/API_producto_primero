@@ -37,21 +37,30 @@ export class ProductListComponent implements OnInit {
     alert('Pendiente');
   }
 
-  editProduct(product: any): void {
-    alert(`Editar producto : ${product.name}`);
-  }
+  
+  editProduct(id: number): void {
+  this.router.navigate(['/products/edit', id]);
+}
 
-  deleteProduct(id: string): void {
-    if (confirm('¿Seguro que deseas eliminar este producto?')) {
-      this.productService.deleteProduct(id).subscribe({
-        next: () => this.loadProducts(),
-        error: (err) => console.error('Error al eliminar', err)
-      });
-    }
+  deleteProduct(id: number): void {
+  if (confirm('¿Seguro que deseas eliminar este producto?')) {
+    this.productService.deleteProduct(id.toString()).subscribe({
+      next: () => {
+        this.loadProducts(); // Recarga la lista
+      },
+      error: (err) => {
+        console.error('Error al eliminar', err);
+        alert('Error al eliminar el producto');
+      }
+    });
   }
+}
 
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
   }
+  goToCreate(): void {
+  this.router.navigate(['/products/new']);
+}
 }

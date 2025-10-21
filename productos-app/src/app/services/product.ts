@@ -25,15 +25,20 @@ export class ProductService {
     return this.http.get<any[]>(this.apiUrl);
   }
 
-  getProduct(id: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/${id}`);
-  }
+ getProduct(id: string): Observable<any> {
+  return this.http.get<any>(
+    `${this.apiUrl}/${id}`,
+    { headers: this.getAuthHeaders() }
+  );
+}
 
-  createProduct(product: any): Observable<any> {
-    return this.http.post<any>(this.apiUrl, product, {
-      headers: this.getAuthHeaders()
-    });
-  }
+createProduct(product: any): Observable<any> {
+  return this.http.post<any>(
+    this.apiUrl,
+    product,
+    { headers: this.getAuthHeaders() } 
+  );
+}
 
   updateProduct(id: string, product: any): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/${id}`, product, {

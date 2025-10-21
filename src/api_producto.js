@@ -4,6 +4,9 @@ const bodyParser = require("body-parser");
 const swaggerJsDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 const cors = require("cors");
+const fetch = require('node-fetch');
+
+const FAKEAPI_BASE_URL = "https://fakerestapi.azurewebsites.net/api/v1";
 
 const app = express();
 app.use(cors({
@@ -64,18 +67,17 @@ function verificarToken(req, res, next) {
   });
 }
 
-// ================== CRUD PRODUCTOS ==================
+// ================== CRUD ACTIVITIES ==================
 /**
  * @swagger
- * /productos:
+ * /activities:
  *   get:
- *     summary: Listar todos los productos
+ *     summary: Listar todas las actividades
  *     responses:
  *       200:
- *         description: Lista de productos
- *
+ *         description: Lista de actividades
  *   post:
- *     summary: Crear un nuevo producto
+ *     summary: Crear una nueva actividad
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -85,34 +87,46 @@ function verificarToken(req, res, next) {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               id:
+ *                 type: integer
+ *                 example: 1
+ *               title:
  *                 type: string
- *                 example: blusa
- *               price:
- *                 type: number
- *                 example: 100
- *               stock:
- *                 type: number
- *                 example: 15
- *               color:
+ *                 example: "Nueva Actividad"
+ *               dueDate:
  *                 type: string
- *                 example: black
- *               brand:
- *                 type: string
- *                 example: bce
+ *                 example: "2025-10-21T04:40:32.4045896+00:00"
+ *               completed:
+ *                 type: boolean
+ *                 example: false
  *     responses:
  *       201:
- *         description: Producto creado
+ *         description: Actividad creada
  */
-app.get("/productos", (req, res) => {
-  res.json(productos);
+app.get("/activities", async (req, res) => {
+  try {
+    const response = await fetch(`${FAKEAPI_BASE_URL}/Activities`);
+    const activities = await response.json();
+    res.json(activities);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener actividades", error: error.message });
+  }
 });
 
-app.post("/productos", verificarToken, (req, res) => {
-  const { name, price, stock, color, brand } = req.body;
-  const nuevoProducto = { id: productos.length + 1, name, price, stock, color, brand};
-  productos.push(nuevoProducto);
-  res.status(201).json(nuevoProducto);
+app.post("/activities", verificarToken, async (req, res) => {
+  try {
+    const response = await fetch(`${FAKEAPI_BASE_URL}/Activities`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body)
+    });
+    const newActivity = await response.json();
+    res.status(201).json(newActivity);
+  } catch (error) {
+    res.status(500).json({ message: "Error al crear la actividad", error: error.message });
+  }
 });
 
 /**
@@ -156,23 +170,42 @@ app.post("/productos", verificarToken, (req, res) => {
 * }
 *}
 */
-// Obtener producto por ID
-app.get('/productos/:id', verificarToken, (req, res) => {
-  const { id } = req.params;
-  const producto = productos.find(p => p.id === parseInt(id));
-  
-  if (!producto) {
-    return res.status(404).json({ message: "Producto no encontrado" });
+/**
+ * @swagger
+ * /activities/{id}:
+ *   get:
+ *     summary: Obtener una actividad por ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Actividad encontrada
+ *       404:
+ *         description: Actividad no encontrada
+ */
+app.get('/activities/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await fetch(`${FAKEAPI_BASE_URL}/Activities/${id}`);
+    if (!response.ok) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+    const activity = await response.json();
+    res.json(activity);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener la actividad", error: error.message });
   }
-
-  res.json(producto);
 });
 
 /**
  * @swagger
- * /productos/{id}:
+ * /activities/{id}:
  *   put:
- *     summary: Actualizar un producto por ID
+ *     summary: Actualizar una actividad por ID
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -188,27 +221,23 @@ app.get('/productos/:id', verificarToken, (req, res) => {
  *           schema:
  *             type: object
  *             properties:
- *               name:
+ *               title:
  *                 type: string
- *                 example: tenis
- *               price:
- *                 type: number
- *                 example: 300
- *               stock:
- *                 type: number
- *                 example: 5
- *               color:
+ *                 example: "Actividad Actualizada"
+ *               dueDate:
  *                 type: string
- *                 example: black
- *               brand:
- *                 type: string
- *                 example: nice
+ *                 example: "2025-10-21T04:40:32.4045896+00:00"
+ *               completed:
+ *                 type: boolean
+ *                 example: true
  *     responses:
  *       200:
- *         description: Producto actualizado
+ *         description: Actividad actualizada
+ *       404:
+ *         description: Actividad no encontrada
  *
  *   delete:
- *     summary: Eliminar un producto por ID
+ *     summary: Eliminar una actividad por ID
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -219,25 +248,41 @@ app.get('/productos/:id', verificarToken, (req, res) => {
  *           type: integer
  *     responses:
  *       200:
- *         description: Producto eliminado
+ *         description: Actividad eliminada
  */
-app.put("/productos/:id", verificarToken, (req, res) => {
-  const { id } = req.params;
-  const { name, price, stock, color, brand } = req.body;
-  const producto = productos.find((p) => p.id == id);
-  if (!producto) return res.status(404).json({ message: "Producto no encontrado" });
-  producto.name = name;
-  producto.price = price;
-  producto.stock = stock;
-  producto.color = color;
-  producto.brand = brand;
-  res.json(producto);
+app.put("/activities/:id", verificarToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await fetch(`${FAKEAPI_BASE_URL}/Activities/${id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(req.body)
+    });
+    if (!response.ok) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+    const updatedActivity = await response.json();
+    res.json(updatedActivity);
+  } catch (error) {
+    res.status(500).json({ message: "Error al actualizar la actividad", error: error.message });
+  }
 });
 
-app.delete("/productos/:id", verificarToken, (req, res) => {
-  const { id } = req.params;
-  productos = productos.filter((p) => p.id != id);
-  res.json({ message: "Producto eliminado" });
+app.delete("/activities/:id", verificarToken, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const response = await fetch(`${FAKEAPI_BASE_URL}/Activities/${id}`, {
+      method: 'DELETE'
+    });
+    if (!response.ok) {
+      return res.status(404).json({ message: "Actividad no encontrada" });
+    }
+    res.json({ message: "Actividad eliminada" });
+  } catch (error) {
+    res.status(500).json({ message: "Error al eliminar la actividad", error: error.message });
+  }
 });
 
 // ================== SWAGGER CONFIG ==================
@@ -245,13 +290,13 @@ const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API de Productos con JWT",
+      title: "API de Actividades con JWT",
       version: "1.0.0",
-      description: "API de ejemplo con autenticación JWT para prácticas",
+      description: "API proxy para FakeRESTApi Activities con autenticación JWT",
     },
     servers: [
       {
-        url: "https://api-productos-jwt.onrender.com", // 🔹 tu dominio de Render
+        url: "http://localhost:3000",
       },
     ],
     components: {
@@ -275,17 +320,17 @@ const PORT = process.env.PORT || 3000;
 // Página de inicio con criterios del parcial
 app.get("/", (req, res) => {
   res.send(`
-    <h1>API de Productos con Auth (JWT)</h1>
-    <p> Documentación interactiva (Swagger UI): <a href="https://api-productos-jwt.onrender.com/api-docs">https://api-productos-jwt.onrender.com/api-docs</a></p>
+    <h1>API de Actividades con Auth (JWT)</h1>
+    <p>Documentación interactiva (Swagger UI): <a href="/api-docs">/api-docs</a></p>
     <hr>
     <p>👉 Endpoints disponibles:</p>
     <ul>
       <li><code>POST /auth</code> → obtener token</li>
-      <li><code>GET /products</code> → listar productos</li>
-      <li><code>GET /products/:id</code> → detalle producto</li>
-      <li><code>POST /products</code> → crear producto (requiere token)</li>
-      <li><code>PUT /products/:id</code> → actualizar producto (requiere token)</li>
-      <li><code>DELETE /products/:id</code> → eliminar producto (requiere token)</li>
+      <li><code>GET /activities</code> → listar actividades</li>
+      <li><code>GET /activities/:id</code> → detalle de actividad</li>
+      <li><code>POST /activities</code> → crear actividad (requiere token)</li>
+      <li><code>PUT /activities/:id</code> → actualizar actividad (requiere token)</li>
+      <li><code>DELETE /activities/:id</code> → eliminar actividad (requiere token)</li>
     </ul>
     <hr>
     <p>ℹ️ Usa Postman para interactuar con la API. </p>
